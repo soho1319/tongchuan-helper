@@ -191,3 +191,35 @@ DEEPSEEK_API_KEY > MINIMAX_API_KEY > OPENAI_API_KEY > AI_API_KEY
 ```
 
 只部署一个服务商时，建议只填该服务商的一组变量，避免混淆。
+
+## 账号密码登录保护
+
+已新增 Cloudflare Pages Functions Middleware：
+
+```text
+functions/_middleware.js
+```
+
+它会保护整个站点，包括：
+
+- 首页
+- 静态资源
+- `/api/generate`
+
+在 Cloudflare Pages → Settings → Variables and Secrets 添加：
+
+```text
+AUTH_USER=你的登录账号
+AUTH_PASSWORD=你的登录密码
+```
+
+也兼容：
+
+```text
+BASIC_AUTH_USER=你的登录账号
+BASIC_AUTH_PASSWORD=你的登录密码
+```
+
+建议把 `AUTH_PASSWORD` 设置为 Secret。
+
+未配置账号密码时，middleware 会自动放行，避免部署后把自己锁在外面。正式使用一定要配置环境变量并重新部署。
