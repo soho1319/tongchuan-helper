@@ -223,3 +223,42 @@ BASIC_AUTH_PASSWORD=你的登录密码
 建议把 `AUTH_PASSWORD` 设置为 Secret。
 
 未配置账号密码时，middleware 会自动放行，避免部署后把自己锁在外面。正式使用一定要配置环境变量并重新部署。
+
+### 新增多个登录用户
+
+如果要给多个用户开账号，推荐使用一个环境变量：
+
+```text
+AUTH_USERS
+```
+
+支持 JSON 格式：
+
+```json
+{"admin":"admin-password","user01":"user01-password","user02":"user02-password"}
+```
+
+也支持简单列表格式：
+
+```text
+admin:admin-password,user01:user01-password,user02:user02-password
+```
+
+或换行格式：
+
+```text
+admin:admin-password
+user01:user01-password
+user02:user02-password
+```
+
+建议把 `AUTH_USERS` 设置为 Secret。
+
+旧的单账号方式仍然可用：
+
+```text
+AUTH_USER=admin
+AUTH_PASSWORD=admin-password
+```
+
+如果同时配置了 `AUTH_USERS` 和 `AUTH_USER/AUTH_PASSWORD`，两边的账号都会生效。
