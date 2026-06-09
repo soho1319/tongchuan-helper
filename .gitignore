@@ -1,0 +1,7 @@
+﻿# Ignore local/deploy artifacts
+cloudflare-deploy.zip
+.DS_Store
+node_modules/
+.wrangler/
+.dev.vars
+.env

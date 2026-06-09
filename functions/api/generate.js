@@ -25,12 +25,35 @@ export async function onRequestPost(context){
     };
     const preset = defaults[provider] || defaults.deepseek;
 
-    const apiKey = env.DEEPSEEK_API_KEY || env.MINIMAX_API_KEY || env.OPENAI_API_KEY || env.AI_API_KEY;
-    const baseUrl = (env.DEEPSEEK_BASE_URL || env.MINIMAX_BASE_URL || env.OPENAI_BASE_URL || env.AI_BASE_URL || preset.baseUrl).replace(/\/$/, '');
-    const model = env.DEEPSEEK_MODEL || env.MINIMAX_MODEL || env.OPENAI_MODEL || env.AI_MODEL || preset.model;
+    const providerConfig = {
+      deepseek: {
+        apiKey: env.DEEPSEEK_API_KEY,
+        baseUrl: env.DEEPSEEK_BASE_URL,
+        model: env.DEEPSEEK_MODEL
+      },
+      minimax: {
+        apiKey: env.MINIMAX_API_KEY,
+        baseUrl: env.MINIMAX_BASE_URL,
+        model: env.MINIMAX_MODEL
+      },
+      openai: {
+        apiKey: env.OPENAI_API_KEY,
+        baseUrl: env.OPENAI_BASE_URL,
+        model: env.OPENAI_MODEL
+      },
+      custom: {
+        apiKey: env.AI_API_KEY,
+        baseUrl: env.AI_BASE_URL,
+        model: env.AI_MODEL
+      }
+    };
+    const cfg = providerConfig[provider] || providerConfig.deepseek;
+    const apiKey = String(cfg.apiKey || env.AI_API_KEY || '').trim();
+    const baseUrl = String(cfg.baseUrl || env.AI_BASE_URL || preset.baseUrl).trim().replace(/\/$/, '');
+    const model = String(cfg.model || env.AI_MODEL || preset.model).trim();
 
     if(!apiKey){
-      return json({ error: '服务端未配置 API Key。请配置 DEEPSEEK_API_KEY、MINIMAX_API_KEY、OPENAI_API_KEY 或 AI_API_KEY' }, 500);
+      return json({ error: `服务端未配置 ${provider} 的 API Key。请检查环境变量。`, provider, baseUrl, model }, 500);
     }
 
     const body = await context.request.json();
@@ -104,7 +127,12 @@ export async function onRequestPost(context){
 
     const result = await upstream.json().catch(() => ({}));
     if(!upstream.ok){
-      return json({ error: result.error?.message || result.base_resp?.status_msg || `AI 接口错误：${upstream.status}` }, upstream.status);
+      return json({
+        error: result.error?.message || result.base_resp?.status_msg || `AI 接口错误：${upstream.status}`,
+        provider,
+        baseUrl,
+        model
+      }, upstream.status);
     }
 
     let content = result.choices?.[0]?.message?.content || '{}';
