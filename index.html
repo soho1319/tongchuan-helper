@@ -8,6 +8,7 @@
 </head>
 <body>
   <header class="hero">
+    <a class="logout-link" href="/api/logout">退出登录</a>
     <div>
       <p class="eyebrow">直播发售 · 社群同传 · 新手工作台</p>
       <h1>发售同传小助手</h1>
@@ -98,6 +99,13 @@
             <option value="老学员侧面种草，像真实用户评论">侧面种草</option>
             <option value="评论区互动感强，适合直播间刷屏带节奏">评论区互动</option>
           </select>
+        </label>
+        <label class="check-row">
+          <input id="largeLaunch" type="checkbox" />
+          <span>大型发售/多群协作时使用</span>
+        </label>
+        <label id="collabRangesWrap" class="collab-ranges hidden">回传范围
+          <textarea id="collabRanges" rows="2" placeholder="如：a1-a9&#10;如：a1-a9、a10-a18、b1-b9"></textarea>
         </label>
       </div>
 

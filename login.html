@@ -1,0 +1,52 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>登录 · 发售同传小助手</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body class="login-page">
+  <main class="login-wrap">
+    <section class="panel login-card">
+      <p class="eyebrow">Tongchuan Helper</p>
+      <h1>登录同传小助手</h1>
+      <p class="subtitle">请输入管理员分配的账号密码。</p>
+      <form id="loginForm">
+        <label>账号
+          <input id="username" autocomplete="username" required placeholder="请输入账号" />
+        </label>
+        <label>密码
+          <input id="password" type="password" autocomplete="current-password" required placeholder="请输入密码" />
+        </label>
+        <button type="submit">登录</button>
+        <p id="loginMsg" class="login-msg"></p>
+      </form>
+    </section>
+  </main>
+  <script>
+    const msg = document.getElementById('loginMsg');
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msg.textContent = '登录中…';
+      const params = new URLSearchParams(location.search);
+      const next = params.get('next') || '/';
+      try{
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value
+          })
+        });
+        const data = await res.json().catch(()=>({}));
+        if(!res.ok) throw new Error(data.error || '登录失败');
+        location.href = next;
+      }catch(err){
+        msg.textContent = err.message;
+      }
+    });
+  </script>
+</body>
+</html>

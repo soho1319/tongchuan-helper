@@ -262,3 +262,32 @@ AUTH_PASSWORD=admin-password
 ```
 
 如果同时配置了 `AUTH_USERS` 和 `AUTH_USER/AUTH_PASSWORD`，两边的账号都会生效。
+
+## Cookie 登录版
+
+当前版本已从浏览器 Basic Auth 改成 Cookie 登录：
+
+- 访问站点会先跳转到 `/login.html`
+- 登录成功后写入 HttpOnly Cookie：`tc_session`
+- 首页右上角有「退出登录」按钮
+- 点击退出会访问 `/api/logout` 并清除 Cookie
+
+账号仍然通过 Cloudflare 环境变量管理：
+
+```text
+AUTH_USERS={"admin":"admin-password","user01":"user01-password"}
+```
+
+建议额外配置一个签名密钥：
+
+```text
+AUTH_SECRET=随机长字符串
+```
+
+可选配置登录有效期，单位秒，默认 7 天：
+
+```text
+AUTH_MAX_AGE=604800
+```
+
+新增/删除用户：修改 `AUTH_USERS` 后重新部署即可。

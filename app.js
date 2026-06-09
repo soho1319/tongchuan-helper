@@ -29,6 +29,14 @@ function pickStage(text, selected){
 function entryText(entry){ return entry ? `\n入口 👉 ${entry}` : '\n入口 👉 {请填写会议号/直播链接}'; }
 function teacherText(t){ return t || '老师'; }
 function offerText(o){ return o || '本场福利/名额'; }
+function getCollabRanges(){
+  const raw = clean($('collabRanges')?.value || '');
+  return raw ? raw.split(/[\n,，、;；]+/).map(x=>x.trim()).filter(Boolean) : ['a1-a9'];
+}
+function collabText(){
+  const ranges = getCollabRanges();
+  return '可以转这条\n\n' + ranges.map(r => `✅ ${r} 已同传完毕`).join('\n') + '\n⚠️ 有异常及时在同传官群上报';
+}
 
 function templates(stage, ctx){
   const {teacher, entry, offer, text, hook} = ctx;
@@ -113,15 +121,18 @@ function render(){
   const raw = clean($('transcript').value);
   const stage = pickStage(raw, $('stage').value);
   const ctx = { teacher: clean($('teacher').value), entry: clean($('entry').value), offer: clean($('offer').value), text: raw };
+  const useLargeLaunch = $('largeLaunch')?.checked;
   const list = templates(stage, ctx);
   const coms = comments(stage, ctx);
   $('analysis').style.display = 'block';
-  $('analysis').innerHTML = `<b>场景判断：</b>${stageNames[stage]}<br><b>调动心理：</b>${psychology[stage]}<br><b>截图建议：</b>${materialAdvice(stage)}<br><b>多群协作：</b>如果要一转九，请在主同传官群补一句「可以转这条」，助手转完回传「✅ a1-a9 已同传完毕」。`;
+  $('analysis').innerHTML = `<b>场景判断：</b>${stageNames[stage]}<br><b>调动心理：</b>${psychology[stage]}<br><b>截图建议：</b>${materialAdvice(stage)}${useLargeLaunch ? '<br><b>多群协作：</b>如果要一转九，请在主同传官群补一句「可以转这条」，助手转完按你填写的范围回传。' : ''}`;
   const cards = [];
   list.forEach((v,i)=>cards.push({title:`社群同传文案 ${i+1}`, text:v}));
   coms.forEach((v,i)=>cards.push({title:`评论区话术 ${i+1}`, text:v}));
   cards.push({title:'截图/素材提醒', text:materialAdvice(stage)});
-  cards.push({title:'协作回传格式', text:'可以转这条\n\n✅ a1-a9 已同传完毕\n✅ a10-a18 已同传完毕\n⚠️ 有异常及时在同传官群上报'});
+  if(useLargeLaunch){
+    cards.push({title:'协作回传格式', text: collabText()});
+  }
   $('results').innerHTML = cards.map((c,idx)=>`<article class="copy-card"><button data-copy="${idx}">复制</button><h3>${c.title}</h3><p>${c.text}</p></article>`).join('');
   document.querySelectorAll('[data-copy]').forEach(btn=>btn.addEventListener('click',()=>copyText(cards[btn.dataset.copy].text, btn)));
 }
@@ -138,6 +149,7 @@ $('copyAll').addEventListener('click', () => {
 });
 $('clear').addEventListener('click', () => { ['teacher','entry','offer','transcript'].forEach(id=>$(id).value=''); $('results').innerHTML=''; $('analysis').style.display='none'; });
 $('resetChecks').addEventListener('click', () => document.querySelectorAll('input[type="checkbox"]').forEach(i=>i.checked=false));
+$('largeLaunch').addEventListener('change', () => $('collabRangesWrap').classList.toggle('hidden', !$('largeLaunch').checked));
 document.querySelectorAll('.step').forEach(step => step.addEventListener('click', e => {
   if(e.target.tagName !== 'INPUT') $('stage').value = step.dataset.stage;
   document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
@@ -156,7 +168,9 @@ async function renderAI(){
     offer: clean($('offer').value),
     transcript: raw,
     count: Math.max(1, Math.min(20, Number($('count')?.value || 6))),
-    tone: clean($('tone')?.value || '新手稳妥，短句，真实不夸张')
+    tone: clean($('tone')?.value || '新手稳妥，短句，真实不夸张'),
+    largeLaunch: Boolean($('largeLaunch')?.checked),
+    collabRanges: getCollabRanges()
   };
   const old = btn.textContent;
   btn.disabled = true;
@@ -183,11 +197,13 @@ async function renderAI(){
 function renderAIResult(data, payload){
   const stage = data.stage || payload.stage;
   $('analysis').style.display = 'block';
-  $('analysis').innerHTML = `<b>场景判断：</b>${data.stageLabel || stageNames[stage] || stage}<br><b>调动心理：</b>${data.psychology || psychology[stage] || ''}<br><b>截图建议：</b>${data.materialAdvice || materialAdvice(stage)}<br><b>节奏提醒：</b>${data.rhythmTip || '短文案、有呼吸感、带入口；多群转发需等待回传。'}`;
+  $('analysis').innerHTML = `<b>场景判断：</b>${data.stageLabel || stageNames[stage] || stage}<br><b>调动心理：</b>${data.psychology || psychology[stage] || ''}<br><b>截图建议：</b>${data.materialAdvice || materialAdvice(stage)}<br><b>节奏提醒：</b>${data.rhythmTip || (payload.largeLaunch ? '短文案、有呼吸感、带入口；多群转发需等待回传。' : '短文案、有呼吸感、带入口；单群/小场不需要输出协作回传格式。')}`;
   const cards = [];
   (data.communityCopies || []).forEach((v,i)=>cards.push({title:`AI 社群同传 ${i+1}`, text:v}));
   (data.commentCopies || []).forEach((v,i)=>cards.push({title:`AI 评论区话术 ${i+1}`, text:v}));
-  (data.collabTips || []).forEach((v,i)=>cards.push({title:`协作提醒 ${i+1}`, text:v}));
+  if(payload.largeLaunch){
+    (data.collabTips || []).forEach((v,i)=>cards.push({title:`协作提醒 ${i+1}`, text:v}));
+  }
   if(!cards.length && data.text){ cards.push({title:'AI 结果', text:data.text}); }
   $('results').innerHTML = cards.map((c,idx)=>`<article class="copy-card"><button data-copy="${idx}">复制</button><h3>${c.title}</h3><p>${c.text}</p></article>`).join('');
   document.querySelectorAll('[data-copy]').forEach(btn=>btn.addEventListener('click',()=>copyText(cards[btn.dataset.copy].text, btn)));
