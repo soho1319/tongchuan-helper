@@ -19,7 +19,7 @@ export async function onRequestPost(context){
     const provider = String(env.AI_PROVIDER || env.LLM_PROVIDER || 'deepseek').toLowerCase();
     const defaults = {
       deepseek: { baseUrl: 'https://api.deepseek.com', model: 'deepseek-chat' },
-      minimax: { baseUrl: 'https://api.minimax.io/v1', model: 'MiniMax-M1' },
+      minimax: { baseUrl: 'https://api.minimaxi.com/anthropic', model: 'MiniMax-M2.7' },
       openai: { baseUrl: 'https://api.openai.com/v1', model: 'gpt-4.1-mini' },
       custom: { baseUrl: 'https://api.openai.com/v1', model: 'gpt-4.1-mini' }
     };
@@ -96,6 +96,16 @@ export async function onRequestPost(context){
       }
     };
 
+    const isMiniMaxAnthropic = provider === 'minimax' && /\/anthropic(\/v1)?$/i.test(baseUrl);
+    if(isMiniMaxAnthropic && /^MiniMax-M3$/i.test(model)){
+      return json({
+        error: 'MiniMax Anthropic 兼容接口当前不支持 MiniMax-M3。请把 MINIMAX_MODEL 改为 MiniMax-M2.7 或 MiniMax-M2.7-highspeed。',
+        provider,
+        baseUrl,
+        model
+      }, 400);
+    }
+
     const requestBody = {
       model,
       temperature: 0.85,
@@ -106,7 +116,7 @@ export async function onRequestPost(context){
     };
 
     // DeepSeek / OpenAI 通常支持 JSON mode；MiniMax 兼容接口不强依赖该参数，用提示词约束 JSON。
-    if(provider !== 'minimax' && String(env.AI_JSON_MODE || 'true') !== 'false'){
+    if(provider !== 'minimax' && !isMiniMaxAnthropic && String(env.AI_JSON_MODE || 'true') !== 'false'){
       requestBody.response_format = { type: 'json_object' };
     }
 
@@ -116,14 +126,41 @@ export async function onRequestPost(context){
       requestBody.max_completion_tokens = Number(env.AI_MAX_TOKENS || 4096);
     }
 
-    const upstream = await fetch(`${baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(requestBody)
-    });
+    let upstream;
+    if(isMiniMaxAnthropic){
+      const anthropicBase = baseUrl.replace(/\/v1$/i, '');
+      upstream = await fetch(`${anthropicBase}/v1/messages`, {
+        method: 'POST',
+        headers: {
+          'X-Api-Key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: Number(env.AI_MAX_TOKENS || 4096),
+          temperature: 0.85,
+          system: systemPrompt,
+          messages: [
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: JSON.stringify(userPrompt, null, 2) }
+              ]
+            }
+          ]
+        })
+      });
+    }else{
+      upstream = await fetch(`${baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+    }
 
     const result = await upstream.json().catch(() => ({}));
     if(!upstream.ok){
@@ -135,7 +172,9 @@ export async function onRequestPost(context){
       }, upstream.status);
     }
 
-    let content = result.choices?.[0]?.message?.content || '{}';
+    let content = isMiniMaxAnthropic
+      ? (result.content || []).filter(block => block.type === 'text').map(block => block.text).join('\n')
+      : (result.choices?.[0]?.message?.content || '{}');
     content = String(content).replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 
     let parsed;
