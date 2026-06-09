@@ -1,0 +1,139 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>发售同传小助手</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <div>
+      <p class="eyebrow">直播发售 · 社群同传 · 新手工作台</p>
+      <h1>发售同传小助手</h1>
+      <p class="subtitle">让新手知道直播每个阶段该做什么；输入逐字稿/现场信息后，自动生成多条可复制的同传文案。</p>
+    </div>
+    <div class="hero-card">
+      <strong>核心原则</strong>
+      <span>同传不是搬运内容，而是搭建信任链 + 营造氛围场。</span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="panel guide">
+      <div class="section-title">
+        <h2>新手直播同传流程</h2>
+        <button id="resetChecks" class="ghost">重置勾选</button>
+      </div>
+
+      <div class="timeline">
+        <article class="step active" data-stage="preheat">
+          <div class="step-head"><span>01</span><h3>开播前 5-15 分钟</h3></div>
+          <label><input type="checkbox"> 发红包/预告，拉人进直播间</label>
+          <label><input type="checkbox"> 发讲师身份、案例、主题价值</label>
+          <label><input type="checkbox"> 文案末尾带会议号/直播入口</label>
+        </article>
+        <article class="step" data-stage="opening">
+          <div class="step-head"><span>02</span><h3>开播初期 5-10 分钟</h3></div>
+          <label><input type="checkbox"> 截直播间人数，圈出数字</label>
+          <label><input type="checkbox"> 截评论区共鸣，发到群里</label>
+          <label><input type="checkbox"> 带头在评论区互动</label>
+        </article>
+        <article class="step" data-stage="content">
+          <div class="step-head"><span>03</span><h3>直播全程：金句/干货</h3></div>
+          <label><input type="checkbox"> 抓讲师反常识观点</label>
+          <label><input type="checkbox"> PPT/图表截图只露一半</label>
+          <label><input type="checkbox"> 用短文案制造好奇</label>
+        </article>
+        <article class="step" data-stage="benefit">
+          <div class="step-head"><span>04</span><h3>福利/中奖/倒计时</h3></div>
+          <label><input type="checkbox"> 突出价值、名额、先到先得</label>
+          <label><input type="checkbox"> 中奖名单及时回传</label>
+          <label><input type="checkbox"> 倒计时制造错过成本</label>
+        </article>
+        <article class="step" data-stage="order">
+          <div class="step-head"><span>05</span><h3>下单/跟单节点</h3></div>
+          <label><input type="checkbox"> 有人下单立刻恭喜</label>
+          <label><input type="checkbox"> 频繁互动未下单的人截图给跟单组</label>
+          <label><input type="checkbox"> 异议不硬怼，用话术批量解除</label>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel generator">
+      <div class="section-title">
+        <h2>逐字稿生成同传文案</h2>
+        <span class="badge">AI 生成 · API Key 服务端保存</span>
+      </div>
+
+      <div class="form-grid">
+        <label>当前节点
+          <select id="stage">
+            <option value="auto">自动判断</option>
+            <option value="preheat">开播前预热</option>
+            <option value="opening">开播初期拉在线</option>
+            <option value="content">金句/干货节点</option>
+            <option value="benefit">福利/中奖节点</option>
+            <option value="order">下单/跟单节点</option>
+            <option value="objection">异议解除</option>
+            <option value="ending">下播收尾</option>
+          </select>
+        </label>
+        <label>讲师/IP
+          <input id="teacher" placeholder="如：金璐老师" />
+        </label>
+        <label>直播入口/会议号
+          <input id="entry" placeholder="如：腾讯会议 123-456-789 / 链接" />
+        </label>
+        <label>产品/福利/名额
+          <input id="offer" placeholder="如：价值1999元资料包，仅30个名额" />
+        </label>
+        <label>生成份数 N
+          <input id="count" type="number" min="1" max="20" value="6" />
+        </label>
+        <label>文案风格
+          <select id="tone">
+            <option value="新手稳妥，短句，真实不夸张">新手稳妥</option>
+            <option value="情绪更强，钩子更明显，但不虚假夸大">强转化</option>
+            <option value="老学员侧面种草，像真实用户评论">侧面种草</option>
+            <option value="评论区互动感强，适合直播间刷屏带节奏">评论区互动</option>
+          </select>
+        </label>
+      </div>
+
+      <label class="full">直播逐字稿 / 现场信息
+        <textarea id="transcript" rows="9" placeholder="粘贴讲师刚刚说的话、PPT内容、福利信息、评论区反馈、下单情况……"></textarea>
+      </label>
+
+      <div class="actions">
+        <button id="generateAI">AI 生成 N 份</button>
+        <button id="generate" class="secondary">本地模板兜底</button>
+        <button id="copyAll" class="secondary">复制全部</button>
+        <button id="clear" class="ghost">清空</button>
+      </div>
+
+      <div id="analysis" class="analysis"></div>
+      <div id="results" class="results"></div>
+    </section>
+  </main>
+
+  <section class="panel rules">
+    <h2>现场红线</h2>
+    <div class="rule-list">
+      <span>不要大段文字</span>
+      <span>不要连续刷屏</span>
+      <span>不要忘记入口</span>
+      <span>PPT 干货只露一半</span>
+      <span>价格/名额/下单必须真实</span>
+      <span>协作沟通只在同传官群</span>
+    </div>
+  </section>
+
+  <footer>
+    <p>基于《同传SOP》《同传话术模板库》《大型发售组织化同传》整理。AI 版通过服务端函数调用大模型。</p>
+  </footer>
+
+  <script src="./app.js"></script>
+</body>
+</html>
+
